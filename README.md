@@ -12,7 +12,11 @@ Use *-f* flag for a full backup, and *-i* for incremental. That's all there is t
 
 #### Get it into production
 1. Make sure you've installed duplicity and gpg. Note that when using GPG > 2.0, you'll need "pinentry-mode loopback" in your *.gnupg/gpg.conf*.
-2. Create/import a GPG keypair dedicated for backups.
+2. Create/import a GPG keypair dedicated for backups. Write the key's password to */root/.gpg.pwd*
+
+    ```
+    PASSPHRASE=""
+    ```
 3. Store your WebDAV user's password in */root/duplicity.pwd*
 
     ```

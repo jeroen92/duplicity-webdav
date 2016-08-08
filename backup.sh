@@ -3,16 +3,20 @@
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
 . /root/.duplicity.pwd
+. /root/.gpg.pwd
 
+export PASSPHRASE
+
+BACKUPPATH="/"
 GPGKEYID=""
 EXCLUDESTR="--exclude /usr/ports/ --exclude /proc/ --exclude /dev/ --exclude /mnt/ --exclude /tmp --exclude /usr/compat/linux/proc"
 MAILSERVER="localhost"
 MAILTODOMAIN=""
-MAILTORCPT=""
-WEBDAVUNAME=""
+MAILTORCPT="root"
+WEBDAVUNAME="admin"
 WEBDAVHOST=""
-WEBDAVPORT=""
-WEBDAVURI=""
+WEBDAVPORT="443"
+WEBDAVURI="remote.php/webdav/"
 
 sendMail() {
   {
@@ -43,11 +47,11 @@ sendMail() {
 }
 
 fullBackup() {
-  RESULT=$(/usr/local/bin/duplicity full --encrypt-key $GPGKEYID $EXCLUDESTR --ssl-cacert-file /usr/local/etc/ssl/cert.pem  --num-retries 1 --volsize 10 / webdavs://$WEBDAVUNAME:"$WEBDAVPWD"@$WEBDAVHOST:$WEBDAVPORT/$WEBDAVURI 2>/tmp/backup.stderr)
+  RESULT=$(/usr/bin/env PASSPHRASE="$PASSPHRASE" /usr/local/bin/duplicity full --encrypt-key $GPGKEYID $EXCLUDESTR --ssl-cacert-file /usr/local/etc/ssl/cert.pem  --num-retries 1 --volsize 10 $BACKUPPATH webdavs://$WEBDAVUNAME:"$WEBDAVPWD"@$WEBDAVHOST:$WEBDAVPORT/$WEBDAVURI 2>/tmp/backup.stderr)
   stderr=`cat /tmp/backup.stderr`
   RESULT="$stderr "$'\n'"$RESULT"
   # Remove all but last four full backups
-  tmp=$(/usr/local/bin/duplicity remove-all-but-n-full 4 --force webdavs://$WEBDAVUNAME:'"$WEBDAVPWD"'@$WEBDAVHOST:$WEBDAVPORT/$WEBDAVURI --ssl-cacert-file /usr/local/etc/ssl/cert.pem  --num-retries 1 2>/tmp/backup.stderr)
+  tmp=$(/usr/bin/env PASSPHRASE="$PASSPHRASE" /usr/local/bin/duplicity remove-all-but-n-full 4 --force webdavs://$WEBDAVUNAME:"$WEBDAVPWD"@$WEBDAVHOST:$WEBDAVPORT/$WEBDAVURI --ssl-cacert-file /usr/local/etc/ssl/cert.pem  --num-retries 1 2>/tmp/backup.stderr)
   stderr=`cat /tmp/backup.stderr`
   tmp="$stderr "$'\n'"$tmp"
   RESULT="$RESULT"$'\n'"$tmp"
@@ -56,7 +60,7 @@ fullBackup() {
 }
 
 incrementalBackup() {
-  RESULT=$(/usr/bin/env /usr/local/bin/duplicity --encrypt-key $GPGKEYID $EXCLUDESTR / webdavs://$WEBDAVUNAME:"$WEBDAVPWD"@$WEBDAVHOST:$WEBDAVPORT/$WEBDAVURI --ssl-cacert-file /usr/local/etc/ssl/cert.pem  --num-retries 1 --volsize 10 2>/tmp/backup.stderr)
+  RESULT=$(/usr/bin/env PASSPHRASE="$PASSPHRASE" /usr/bin/env /usr/local/bin/duplicity --encrypt-key $GPGKEYID $EXCLUDESTR $BACKUPPATH webdavs://$WEBDAVUNAME:"$WEBDAVPWD"@$WEBDAVHOST:$WEBDAVPORT/$WEBDAVURI --ssl-cacert-file /usr/local/etc/ssl/cert.pem  --num-retries 1 --volsize 10 2>/tmp/backup.stderr)
   stderr=`cat /tmp/backup.stderr`
   RESULT="$stderr "$'\n'"$RESULT"
   sendMail $TYPE "$RESULT"
